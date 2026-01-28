@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:radarr.video)",
+      "Bash(tree:*)",
+      "Bash(dir /s \"C:\\\\git\\\\nas-mcp-server\")",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:arrapi.kometa.wiki)",
+      "WebFetch(domain:www.freecodecamp.org)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:developer.themoviedb.org)",
+      "WebFetch(domain:deepwiki.com)",
+      "Bash(powershell -Command \"Get-ChildItem -Path ''C:\\\\git\\\\nas-mcp-server'' -Recurse -Force | Select-Object -First 100\")",
+      "WebFetch(domain:modelcontextprotocol.info)",
+      "Bash(dir \"C:\\\\git\\\\nas-mcp-server\" /s /b)",
+      "Bash(docker-compose build:*)",
+      "Bash(git init:*)",
+      "Bash(git remote add:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nInitial commit: NAS MCP Server with Radarr and Plex\n\n- Radarr module: 8 tools \\(get movies, search, add, delete, queue, calendar, status\\)\n- Plex module: 9 tools \\(search, libraries, watched/unwatched, recommendations\\)\n- Docker setup with SSE transport on port 3001\n- MCP prompt guide for AI context\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nFix: use environment variables instead of .env file\n\nPortainer passes env vars directly, no need for .env file\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nFix: use correct MCP prompt API\n\nUse list_prompts/get_prompt handlers instead of @mcp.prompt\\(\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "WebFetch(domain:modelcontextprotocol.github.io)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nRefactor: use FastMCP API for tools and prompts\n\n- Switch from Server to FastMCP class\n- Tools now return str directly instead of list[TextContent]\n- Prompts use @mcp.prompt\\(\\) decorator\n- FastMCP handles SSE transport internally\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+    ]
+  }
+}

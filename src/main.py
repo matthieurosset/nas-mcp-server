@@ -2,13 +2,7 @@ import os
 import sys
 import logging
 from dotenv import load_dotenv
-from mcp.server import Server
-from mcp.server.sse import SseServerTransport
-from mcp.types import Prompt, PromptMessage, TextContent
-from starlette.applications import Starlette
-from starlette.routing import Route
-from starlette.responses import JSONResponse
-import uvicorn
+from mcp.server.fastmcp import FastMCP
 
 # Charger les variables d'environnement
 load_dotenv()
@@ -22,7 +16,7 @@ logging.basicConfig(
 logger = logging.getLogger("nas-mcp-server")
 
 # Créer le serveur MCP
-mcp = Server("nas-mcp-server")
+mcp = FastMCP("nas-mcp-server")
 
 # Prompt guide pour l'IA
 GUIDE = """
@@ -43,25 +37,10 @@ Utilise Radarr quand l'utilisateur veut :
 - supprimer un film de la surveillance
 """
 
-@mcp.list_prompts()
-async def list_prompts() -> list[Prompt]:
-    return [
-        Prompt(
-            name="nas-guide",
-            description="Guide d'utilisation des services NAS média",
-        )
-    ]
-
-@mcp.get_prompt()
-async def get_prompt(name: str) -> list[PromptMessage]:
-    if name == "nas-guide":
-        return [
-            PromptMessage(
-                role="user",
-                content=TextContent(type="text", text=GUIDE)
-            )
-        ]
-    raise ValueError(f"Prompt inconnu: {name}")
+@mcp.prompt()
+def nas_guide() -> str:
+    """Guide d'utilisation des services NAS média."""
+    return GUIDE
 
 # Importer et enregistrer les outils Radarr
 from radarr import RadarrClient, register_radarr_tools
@@ -84,48 +63,13 @@ except ValueError as e:
     logger.warning(f"Plex not configured: {e}")
 
 
-# Transport SSE
-sse = SseServerTransport("/messages/")
-
-
-async def handle_sse(request):
-    """Gère les connexions SSE entrantes."""
-    async with sse.connect_sse(
-        request.scope, request.receive, request._send
-    ) as streams:
-        await mcp.run(
-            streams[0], streams[1], mcp.create_initialization_options()
-        )
-
-
-async def handle_messages(request):
-    """Gère les messages POST du client."""
-    await sse.handle_post_message(request.scope, request.receive, request._send)
-
-
-async def health_check(request):
-    """Endpoint de santé pour Docker/Kubernetes."""
-    return JSONResponse({"status": "healthy", "server": "nas-mcp-server"})
-
-
-# Application Starlette
-app = Starlette(
-    debug=False,
-    routes=[
-        Route("/sse", endpoint=handle_sse),
-        Route("/messages/", endpoint=handle_messages, methods=["POST"]),
-        Route("/health", endpoint=health_check),
-    ],
-)
-
-
 def main():
     """Point d'entrée principal."""
     port = int(os.getenv("MCP_PORT", "3001"))
     host = os.getenv("MCP_HOST", "0.0.0.0")
 
     logger.info(f"Starting NAS MCP Server on {host}:{port}")
-    uvicorn.run(app, host=host, port=port, log_level="info")
+    mcp.run(transport="sse", host=host, port=port)
 
 
 if __name__ == "__main__":

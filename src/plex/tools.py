@@ -1,14 +1,13 @@
 import json
-from mcp.server import Server
-from mcp.types import TextContent
+from mcp.server.fastmcp import FastMCP
 from .client import PlexClient
 
 
-def register_plex_tools(mcp: Server, client: PlexClient) -> None:
+def register_plex_tools(mcp: FastMCP, client: PlexClient) -> None:
     """Enregistre tous les outils Plex sur le serveur MCP."""
 
     @mcp.tool()
-    async def plex_get_libraries() -> list[TextContent]:
+    async def plex_get_libraries() -> str:
         """Liste toutes les bibliothèques Plex (Films, Séries, Musique, etc.)."""
         libraries = await client.get_libraries()
         simplified = []
@@ -20,16 +19,13 @@ def register_plex_tools(mcp: Server, client: PlexClient) -> None:
                 "agent": lib.get("agent"),
                 "scanner": lib.get("scanner"),
             })
-        return [TextContent(
-            type="text",
-            text=json.dumps(simplified, indent=2, ensure_ascii=False)
-        )]
+        return json.dumps(simplified, indent=2, ensure_ascii=False)
 
     @mcp.tool()
     async def plex_search(
         query: str,
         media_type: str | None = None,
-    ) -> list[TextContent]:
+    ) -> str:
         """
         Recherche du contenu dans Plex par titre, acteur, réalisateur, etc.
 
@@ -39,13 +35,13 @@ def register_plex_tools(mcp: Server, client: PlexClient) -> None:
         """
         results = await client.search(query, media_type)
         simplified = []
-        for r in results[:20]:  # Limiter à 20 résultats
+        for r in results[:20]:
             simplified.append({
                 "ratingKey": r.get("ratingKey"),
                 "title": r.get("title"),
                 "type": r.get("type"),
                 "year": r.get("year"),
-                "summary": (r.get("summary", "") or "")[:200] + "..." if len(r.get("summary", "") or "") > 200 else r.get("summary", ""),
+                "summary": (r.get("summary") or "")[:200] + "..." if len(r.get("summary") or "") > 200 else r.get("summary", ""),
                 "rating": r.get("rating"),
                 "viewCount": r.get("viewCount", 0),
                 "lastViewedAt": r.get("lastViewedAt"),
@@ -53,16 +49,13 @@ def register_plex_tools(mcp: Server, client: PlexClient) -> None:
                 "director": [d.get("tag") for d in r.get("Director", [])] if r.get("Director") else None,
                 "genre": [g.get("tag") for g in r.get("Genre", [])] if r.get("Genre") else None,
             })
-        return [TextContent(
-            type="text",
-            text=json.dumps(simplified, indent=2, ensure_ascii=False)
-        )]
+        return json.dumps(simplified, indent=2, ensure_ascii=False)
 
     @mcp.tool()
     async def plex_get_unwatched(
         library_key: str | None = None,
         limit: int = 50,
-    ) -> list[TextContent]:
+    ) -> str:
         """
         Récupère les films ou séries non vus.
 
@@ -73,7 +66,6 @@ def register_plex_tools(mcp: Server, client: PlexClient) -> None:
         if library_key:
             results = await client.get_library_content(library_key, unwatched_only=True)
         else:
-            # Récupérer toutes les bibliothèques et chercher les non vus
             libraries = await client.get_libraries()
             results = []
             for lib in libraries:
@@ -88,18 +80,15 @@ def register_plex_tools(mcp: Server, client: PlexClient) -> None:
                 "title": r.get("title"),
                 "type": r.get("type"),
                 "year": r.get("year"),
-                "summary": (r.get("summary", "") or "")[:150] + "..." if len(r.get("summary", "") or "") > 150 else r.get("summary", ""),
+                "summary": (r.get("summary") or "")[:150] + "..." if len(r.get("summary") or "") > 150 else r.get("summary", ""),
                 "rating": r.get("rating"),
                 "addedAt": r.get("addedAt"),
                 "genre": [g.get("tag") for g in r.get("Genre", [])] if r.get("Genre") else None,
             })
-        return [TextContent(
-            type="text",
-            text=json.dumps({"count": len(simplified), "items": simplified}, indent=2, ensure_ascii=False)
-        )]
+        return json.dumps({"count": len(simplified), "items": simplified}, indent=2, ensure_ascii=False)
 
     @mcp.tool()
-    async def plex_get_watched(limit: int = 50) -> list[TextContent]:
+    async def plex_get_watched(limit: int = 50) -> str:
         """
         Récupère l'historique de visionnage (films et séries déjà vus).
 
@@ -112,19 +101,16 @@ def register_plex_tools(mcp: Server, client: PlexClient) -> None:
             simplified.append({
                 "ratingKey": r.get("ratingKey"),
                 "title": r.get("title"),
-                "grandparentTitle": r.get("grandparentTitle"),  # Nom de la série si épisode
+                "grandparentTitle": r.get("grandparentTitle"),
                 "type": r.get("type"),
                 "year": r.get("year"),
                 "viewedAt": r.get("viewedAt"),
                 "accountID": r.get("accountID"),
             })
-        return [TextContent(
-            type="text",
-            text=json.dumps({"count": len(simplified), "items": simplified}, indent=2, ensure_ascii=False)
-        )]
+        return json.dumps({"count": len(simplified), "items": simplified}, indent=2, ensure_ascii=False)
 
     @mcp.tool()
-    async def plex_get_on_deck() -> list[TextContent]:
+    async def plex_get_on_deck() -> str:
         """Récupère les médias 'À suivre' (en cours de visionnage, à reprendre)."""
         results = await client.get_on_deck()
         simplified = []
@@ -135,17 +121,14 @@ def register_plex_tools(mcp: Server, client: PlexClient) -> None:
                 "grandparentTitle": r.get("grandparentTitle"),
                 "type": r.get("type"),
                 "year": r.get("year"),
-                "viewOffset": r.get("viewOffset"),  # Position de lecture en ms
+                "viewOffset": r.get("viewOffset"),
                 "duration": r.get("duration"),
-                "summary": (r.get("summary", "") or "")[:150] + "..." if len(r.get("summary", "") or "") > 150 else r.get("summary", ""),
+                "summary": (r.get("summary") or "")[:150] + "..." if len(r.get("summary") or "") > 150 else r.get("summary", ""),
             })
-        return [TextContent(
-            type="text",
-            text=json.dumps(simplified, indent=2, ensure_ascii=False)
-        )]
+        return json.dumps(simplified, indent=2, ensure_ascii=False)
 
     @mcp.tool()
-    async def plex_get_recently_added(limit: int = 30) -> list[TextContent]:
+    async def plex_get_recently_added(limit: int = 30) -> str:
         """
         Récupère les médias récemment ajoutés à la bibliothèque.
 
@@ -161,24 +144,20 @@ def register_plex_tools(mcp: Server, client: PlexClient) -> None:
                 "type": r.get("type"),
                 "year": r.get("year"),
                 "addedAt": r.get("addedAt"),
-                "summary": (r.get("summary", "") or "")[:150] + "..." if len(r.get("summary", "") or "") > 150 else r.get("summary", ""),
+                "summary": (r.get("summary") or "")[:150] + "..." if len(r.get("summary") or "") > 150 else r.get("summary", ""),
                 "rating": r.get("rating"),
                 "genre": [g.get("tag") for g in r.get("Genre", [])] if r.get("Genre") else None,
             })
-        return [TextContent(
-            type="text",
-            text=json.dumps(simplified, indent=2, ensure_ascii=False)
-        )]
+        return json.dumps(simplified, indent=2, ensure_ascii=False)
 
     @mcp.tool()
-    async def plex_get_recommendations(rating_key: str) -> list[TextContent]:
+    async def plex_get_recommendations(rating_key: str) -> str:
         """
         Récupère des recommandations basées sur un film ou une série.
 
         Args:
             rating_key: L'identifiant du média (obtenu via plex_search ou autres outils)
         """
-        # D'abord récupérer le titre du média source
         source = await client.get_metadata(rating_key)
         source_title = source.get("title", f"ID:{rating_key}")
 
@@ -190,19 +169,16 @@ def register_plex_tools(mcp: Server, client: PlexClient) -> None:
                 "title": r.get("title"),
                 "type": r.get("type"),
                 "year": r.get("year"),
-                "summary": (r.get("summary", "") or "")[:150] + "..." if len(r.get("summary", "") or "") > 150 else r.get("summary", ""),
+                "summary": (r.get("summary") or "")[:150] + "..." if len(r.get("summary") or "") > 150 else r.get("summary", ""),
                 "rating": r.get("rating"),
             })
-        return [TextContent(
-            type="text",
-            text=json.dumps({
-                "basedOn": source_title,
-                "recommendations": simplified
-            }, indent=2, ensure_ascii=False)
-        )]
+        return json.dumps({
+            "basedOn": source_title,
+            "recommendations": simplified
+        }, indent=2, ensure_ascii=False)
 
     @mcp.tool()
-    async def plex_get_movie_details(rating_key: str) -> list[TextContent]:
+    async def plex_get_movie_details(rating_key: str) -> str:
         """
         Récupère les détails complets d'un film ou d'une série.
 
@@ -231,13 +207,10 @@ def register_plex_tools(mcp: Server, client: PlexClient) -> None:
             "genre": [g.get("tag") for g in metadata.get("Genre", [])] if metadata.get("Genre") else None,
             "country": [c.get("tag") for c in metadata.get("Country", [])] if metadata.get("Country") else None,
         }
-        return [TextContent(
-            type="text",
-            text=json.dumps(details, indent=2, ensure_ascii=False)
-        )]
+        return json.dumps(details, indent=2, ensure_ascii=False)
 
     @mcp.tool()
-    async def plex_server_status() -> list[TextContent]:
+    async def plex_server_status() -> str:
         """Récupère les informations et le statut du serveur Plex."""
         info = await client.get_server_info()
         sessions = await client.get_active_sessions()
@@ -260,7 +233,4 @@ def register_plex_tools(mcp: Server, client: PlexClient) -> None:
                 for s in sessions
             ],
         }
-        return [TextContent(
-            type="text",
-            text=json.dumps(status, indent=2, ensure_ascii=False)
-        )]
+        return json.dumps(status, indent=2, ensure_ascii=False)
