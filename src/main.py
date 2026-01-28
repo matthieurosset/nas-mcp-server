@@ -2,7 +2,7 @@ import os
 import sys
 import logging
 from dotenv import load_dotenv
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 
 # Charger les variables d'environnement
 load_dotenv()

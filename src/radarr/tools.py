@@ -1,5 +1,5 @@
 import json
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 from .client import RadarrClient
 
 

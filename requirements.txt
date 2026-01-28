@@ -1,5 +1,3 @@
-mcp[cli]
+fastmcp
 httpx
 python-dotenv
-starlette
-uvicorn

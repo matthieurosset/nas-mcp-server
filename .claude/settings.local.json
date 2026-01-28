@@ -23,7 +23,8 @@
       "Bash(git commit -m \"$\\(cat <<''EOF''\nFix: use environment variables instead of .env file\n\nPortainer passes env vars directly, no need for .env file\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(git commit -m \"$\\(cat <<''EOF''\nFix: use correct MCP prompt API\n\nUse list_prompts/get_prompt handlers instead of @mcp.prompt\\(\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
       "WebFetch(domain:modelcontextprotocol.github.io)",
-      "Bash(git commit -m \"$\\(cat <<''EOF''\nRefactor: use FastMCP API for tools and prompts\n\n- Switch from Server to FastMCP class\n- Tools now return str directly instead of list[TextContent]\n- Prompts use @mcp.prompt\\(\\) decorator\n- FastMCP handles SSE transport internally\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nRefactor: use FastMCP API for tools and prompts\n\n- Switch from Server to FastMCP class\n- Tools now return str directly instead of list[TextContent]\n- Prompts use @mcp.prompt\\(\\) decorator\n- FastMCP handles SSE transport internally\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit:*)"
     ]
   }
 }
