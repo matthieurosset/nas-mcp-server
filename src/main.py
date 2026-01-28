@@ -4,6 +4,7 @@ import logging
 from dotenv import load_dotenv
 from mcp.server import Server
 from mcp.server.sse import SseServerTransport
+from mcp.types import Prompt, PromptMessage, TextContent
 from starlette.applications import Starlette
 from starlette.routing import Route
 from starlette.responses import JSONResponse
@@ -42,10 +43,25 @@ Utilise Radarr quand l'utilisateur veut :
 - supprimer un film de la surveillance
 """
 
-@mcp.prompt()
-def nas_guide() -> str:
-    """Guide d'utilisation des services NAS média."""
-    return GUIDE
+@mcp.list_prompts()
+async def list_prompts() -> list[Prompt]:
+    return [
+        Prompt(
+            name="nas-guide",
+            description="Guide d'utilisation des services NAS média",
+        )
+    ]
+
+@mcp.get_prompt()
+async def get_prompt(name: str) -> list[PromptMessage]:
+    if name == "nas-guide":
+        return [
+            PromptMessage(
+                role="user",
+                content=TextContent(type="text", text=GUIDE)
+            )
+        ]
+    raise ValueError(f"Prompt inconnu: {name}")
 
 # Importer et enregistrer les outils Radarr
 from radarr import RadarrClient, register_radarr_tools
