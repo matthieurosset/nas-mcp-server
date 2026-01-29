@@ -66,7 +66,7 @@ class PlexClient:
             year: Filtrer par année de sortie
         """
         endpoint = f"/library/sections/{library_key}/all"
-        params = {}
+        params = {"includeGuids": "1"}
 
         if unwatched_only:
             params["unwatched"] = "1"

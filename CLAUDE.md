@@ -16,13 +16,8 @@ Le code utilise `audienceRating` pour afficher les notes IMDB.
 
 ## Déploiement des changements
 
-Après modification du code, redémarrer le serveur MCP pour appliquer les changements :
-
-```bash
-# Si lancé via Claude Desktop, redémarrer Claude Desktop
-# Si lancé manuellement :
-uv run python -m src.main
-```
+1. Commit et push les changements
+2. Demander à l'utilisateur de redeploy l'image sur Portainer
 
 ## Structure du projet
 
