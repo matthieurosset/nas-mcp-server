@@ -234,3 +234,81 @@ def register_plex_tools(mcp: FastMCP, client: PlexClient) -> None:
             ],
         }
         return json.dumps(status, indent=2, ensure_ascii=False)
+
+    @mcp.tool()
+    async def plex_filter_library(
+        library_key: str | None = None,
+        actor: str | None = None,
+        director: str | None = None,
+        genre: str | None = None,
+        year: int | None = None,
+    ) -> str:
+        """
+        Filtre les films de la bibliothèque Plex par critères précis.
+
+        Contrairement à plex_search (recherche textuelle), cet outil filtre
+        par correspondance exacte des métadonnées. Tous les critères fournis
+        sont combinés avec une logique AND.
+
+        Args:
+            library_key: Clé de bibliothèque (optionnel, sinon cherche dans toutes les bibliothèques de films)
+            actor: Nom de l'acteur (ex: "Brad Pitt")
+            director: Nom du réalisateur (ex: "Steven Spielberg")
+            genre: Genre du film (ex: "Action", "Drama", "Comedy")
+            year: Année de sortie (ex: 2020)
+
+        Exemples:
+            - Films avec Brad Pitt: actor="Brad Pitt"
+            - Comédies de 2023: genre="Comedy", year=2023
+            - Films de Spielberg: director="Steven Spielberg"
+        """
+        if all(v is None for v in [actor, director, genre, year]):
+            return json.dumps({
+                "error": "Au moins un critère de filtre requis",
+                "hint": "Utilisez actor, director, genre ou year"
+            }, ensure_ascii=False)
+
+        if library_key:
+            library_keys = [library_key]
+        else:
+            libraries = await client.get_libraries()
+            library_keys = [
+                lib.get("key") for lib in libraries
+                if lib.get("type") == "movie"
+            ]
+
+        all_results = []
+        for key in library_keys:
+            movies = await client.get_library_content(
+                key,
+                actor=actor,
+                director=director,
+                genre=genre,
+                year=year,
+            )
+            all_results.extend(movies)
+
+        simplified = []
+        for m in all_results:
+            simplified.append({
+                "ratingKey": m.get("ratingKey"),
+                "title": m.get("title"),
+                "year": m.get("year"),
+                "rating": m.get("rating"),
+                "summary": (m.get("summary") or "")[:150] + "..." if len(m.get("summary") or "") > 150 else m.get("summary", ""),
+                "genre": [g.get("tag") for g in m.get("Genre", [])] if m.get("Genre") else None,
+                "director": [d.get("tag") for d in m.get("Director", [])] if m.get("Director") else None,
+            })
+
+        return json.dumps({
+            "count": len(simplified),
+            "filters_applied": {
+                k: v for k, v in {
+                    "actor": actor,
+                    "director": director,
+                    "genre": genre,
+                    "year": year
+                }.items() if v is not None
+            },
+            "items": simplified
+        }, indent=2, ensure_ascii=False)

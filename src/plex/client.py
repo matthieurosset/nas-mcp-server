@@ -49,14 +49,37 @@ class PlexClient:
         self,
         library_key: str,
         unwatched_only: bool = False,
+        actor: str | None = None,
+        director: str | None = None,
+        genre: str | None = None,
+        year: int | None = None,
     ) -> list[dict[str, Any]]:
-        """Récupère le contenu d'une bibliothèque."""
+        """
+        Récupère le contenu d'une bibliothèque avec filtres optionnels.
+
+        Args:
+            library_key: Clé de la section de bibliothèque
+            unwatched_only: Ne retourner que les médias non vus
+            actor: Filtrer par nom d'acteur
+            director: Filtrer par nom de réalisateur
+            genre: Filtrer par genre
+            year: Filtrer par année de sortie
+        """
         endpoint = f"/library/sections/{library_key}/all"
         params = {}
+
         if unwatched_only:
             params["unwatched"] = "1"
+        if actor:
+            params["actor"] = actor
+        if director:
+            params["director"] = director
+        if genre:
+            params["genre"] = genre
+        if year:
+            params["year"] = str(year)
 
-        data = await self._request(endpoint, params)
+        data = await self._request(endpoint, params if params else None)
         metadata = data.get("MediaContainer", {}).get("Metadata", [])
         return metadata if isinstance(metadata, list) else [metadata] if metadata else []
 
