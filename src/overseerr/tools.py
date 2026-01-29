@@ -1,10 +1,17 @@
+import asyncio
 import json
 from fastmcp import FastMCP
 from .client import OverseerrClient
 
 
-def register_overseerr_tools(mcp: FastMCP, client: OverseerrClient) -> None:
-    """Enregistre tous les outils Overseerr sur le serveur MCP."""
+def register_overseerr_tools(mcp: FastMCP, client: OverseerrClient, radarr_client=None) -> None:
+    """Enregistre tous les outils Overseerr sur le serveur MCP.
+
+    Args:
+        mcp: Le serveur FastMCP
+        client: Le client Overseerr
+        radarr_client: Client Radarr optionnel pour enrichir avec les notes IMDB
+    """
 
     @mcp.tool()
     async def overseerr_status() -> str:
@@ -244,13 +251,28 @@ def register_overseerr_tools(mcp: FastMCP, client: OverseerrClient) -> None:
             "results": simplified,
         }, indent=2, ensure_ascii=False)
 
+    async def _fetch_imdb_rating(tmdb_id: int) -> tuple[int, float | None]:
+        """Récupère la note IMDB d'un film via Radarr."""
+        if not radarr_client:
+            return tmdb_id, None
+        try:
+            results = await radarr_client.search_movie(f"tmdb:{tmdb_id}")
+            if results:
+                imdb_rating = results[0].get("ratings", {}).get("imdb", {}).get("value")
+                return tmdb_id, imdb_rating
+        except Exception:
+            pass
+        return tmdb_id, None
+
     @mcp.tool()
-    async def overseerr_get_actor_missing_movies(person_id: int) -> str:
+    async def overseerr_get_actor_missing_movies(person_id: int, include_imdb_ratings: bool = True) -> str:
         """
         Compare la filmographie d'un acteur avec la bibliothèque et retourne les films manquants.
+        Enrichit avec les notes IMDB via Radarr si disponible.
 
         Args:
             person_id: L'identifiant TMDB de la personne (obtenu via overseerr_search)
+            include_imdb_ratings: Inclure les notes IMDB (nécessite des requêtes Radarr supplémentaires)
         """
         person = await client.get_person(person_id)
 
@@ -275,13 +297,29 @@ def register_overseerr_tools(mcp: FastMCP, client: OverseerrClient) -> None:
                 "year": (credit.get("releaseDate") or "")[:4] or None,
                 "character": credit.get("character"),
                 "popularity": credit.get("popularity"),
-                "voteAverage": credit.get("voteAverage"),
+                "tmdbRating": credit.get("voteAverage"),
             }
 
             if is_available:
                 available.append(movie_data)
             else:
                 missing.append(movie_data)
+
+        # Limiter aux top 30 manquants
+        missing = missing[:30]
+
+        # Enrichir avec les notes IMDB en parallèle si Radarr est disponible
+        if include_imdb_ratings and radarr_client and missing:
+            tmdb_ids = [m["id"] for m in missing]
+            rating_tasks = [_fetch_imdb_rating(tmdb_id) for tmdb_id in tmdb_ids]
+            ratings_results = await asyncio.gather(*rating_tasks)
+
+            # Créer un dict tmdb_id -> imdb_rating
+            imdb_ratings = {tmdb_id: rating for tmdb_id, rating in ratings_results}
+
+            # Ajouter les notes IMDB aux films manquants
+            for movie in missing:
+                movie["imdbRating"] = imdb_ratings.get(movie["id"])
 
         return json.dumps({
             "person": {
@@ -293,6 +331,6 @@ def register_overseerr_tools(mcp: FastMCP, client: OverseerrClient) -> None:
                 "available": len(available),
                 "missing": len(missing),
             },
-            "missingMovies": missing[:30],  # Top 30 manquants par popularité
+            "missingMovies": missing,
             "availableMovies": available[:10],  # Top 10 disponibles
         }, indent=2, ensure_ascii=False)

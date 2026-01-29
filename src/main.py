@@ -52,6 +52,7 @@ def nas_guide() -> str:
 # Importer et enregistrer les outils Radarr
 from radarr import RadarrClient, register_radarr_tools
 
+radarr_client = None
 try:
     radarr_client = RadarrClient()
     register_radarr_tools(mcp, radarr_client)
@@ -74,7 +75,8 @@ from overseerr import OverseerrClient, register_overseerr_tools
 
 try:
     overseerr_client = OverseerrClient()
-    register_overseerr_tools(mcp, overseerr_client)
+    # Passer le client Radarr pour enrichir avec les notes IMDB
+    register_overseerr_tools(mcp, overseerr_client, radarr_client=radarr_client)
     logger.info("Overseerr tools registered successfully")
 except ValueError as e:
     logger.warning(f"Overseerr not configured: {e}")
