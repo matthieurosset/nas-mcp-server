@@ -35,6 +35,13 @@ Utilise Radarr quand l'utilisateur veut :
 - ajouter/télécharger un nouveau film
 - voir les téléchargements en cours
 - supprimer un film de la surveillance
+
+### Overseerr - Découverte et demandes
+Utilise Overseerr quand l'utilisateur veut :
+- rechercher un acteur et voir sa filmographie
+- savoir quels films d'un acteur manquent dans la bibliothèque
+- découvrir des films populaires
+- faire une demande de film/série
 """
 
 @mcp.prompt()
@@ -61,6 +68,16 @@ try:
     logger.info("Plex tools registered successfully")
 except ValueError as e:
     logger.warning(f"Plex not configured: {e}")
+
+# Importer et enregistrer les outils Overseerr
+from overseerr import OverseerrClient, register_overseerr_tools
+
+try:
+    overseerr_client = OverseerrClient()
+    register_overseerr_tools(mcp, overseerr_client)
+    logger.info("Overseerr tools registered successfully")
+except ValueError as e:
+    logger.warning(f"Overseerr not configured: {e}")
 
 
 def main():
