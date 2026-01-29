@@ -42,7 +42,7 @@ def register_plex_tools(mcp: FastMCP, client: PlexClient) -> None:
                 "type": r.get("type"),
                 "year": r.get("year"),
                 "summary": (r.get("summary") or "")[:200] + "..." if len(r.get("summary") or "") > 200 else r.get("summary", ""),
-                "rating": r.get("rating"),
+                "rating": r.get("audienceRating"),
                 "viewCount": r.get("viewCount", 0),
                 "lastViewedAt": r.get("lastViewedAt"),
                 "addedAt": r.get("addedAt"),
@@ -81,7 +81,7 @@ def register_plex_tools(mcp: FastMCP, client: PlexClient) -> None:
                 "type": r.get("type"),
                 "year": r.get("year"),
                 "summary": (r.get("summary") or "")[:150] + "..." if len(r.get("summary") or "") > 150 else r.get("summary", ""),
-                "rating": r.get("rating"),
+                "rating": r.get("audienceRating"),
                 "addedAt": r.get("addedAt"),
                 "genre": [g.get("tag") for g in r.get("Genre", [])] if r.get("Genre") else None,
             })
@@ -145,7 +145,7 @@ def register_plex_tools(mcp: FastMCP, client: PlexClient) -> None:
                 "year": r.get("year"),
                 "addedAt": r.get("addedAt"),
                 "summary": (r.get("summary") or "")[:150] + "..." if len(r.get("summary") or "") > 150 else r.get("summary", ""),
-                "rating": r.get("rating"),
+                "rating": r.get("audienceRating"),
                 "genre": [g.get("tag") for g in r.get("Genre", [])] if r.get("Genre") else None,
             })
         return json.dumps(simplified, indent=2, ensure_ascii=False)
@@ -170,7 +170,7 @@ def register_plex_tools(mcp: FastMCP, client: PlexClient) -> None:
                 "type": r.get("type"),
                 "year": r.get("year"),
                 "summary": (r.get("summary") or "")[:150] + "..." if len(r.get("summary") or "") > 150 else r.get("summary", ""),
-                "rating": r.get("rating"),
+                "rating": r.get("audienceRating"),
             })
         return json.dumps({
             "basedOn": source_title,
@@ -294,7 +294,7 @@ def register_plex_tools(mcp: FastMCP, client: PlexClient) -> None:
                 "ratingKey": m.get("ratingKey"),
                 "title": m.get("title"),
                 "year": m.get("year"),
-                "rating": m.get("rating"),
+                "rating": m.get("audienceRating"),
                 "summary": (m.get("summary") or "")[:150] + "..." if len(m.get("summary") or "") > 150 else m.get("summary", ""),
                 "genre": [g.get("tag") for g in m.get("Genre", [])] if m.get("Genre") else None,
                 "director": [d.get("tag") for d in m.get("Director", [])] if m.get("Director") else None,
