@@ -7,7 +7,7 @@ Serveur MCP pour interagir avec Plex, Radarr et Overseerr.
 ```json
 {
   "command": "uvx",
-  "args": ["git+https://github.com/matthieurosset/nas-mcp-server"],
+  "args": ["nas-mcp-server"],
   "env": {
     "PLEX_URL": "http://your-nas:32400",
     "PLEX_TOKEN": "your_plex_token",
@@ -59,3 +59,13 @@ src/nas_mcp_server/
 | `RADARR_API_KEY` | Clé API Radarr | Non |
 | `OVERSEERR_URL` | URL du serveur Overseerr | Non |
 | `OVERSEERR_API_KEY` | Clé API Overseerr | Non |
+
+## Release
+
+Procédure pour publier une nouvelle version :
+
+1. Incrémenter `version` dans `pyproject.toml`
+2. Commit et push sur GitHub
+3. Build et publier sur PyPI : `uv build && uv publish`
+
+Le token PyPI est stocké dans le fichier `.pypirc` de l'utilisateur.
