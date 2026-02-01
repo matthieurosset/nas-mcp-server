@@ -41,6 +41,13 @@ Utilise Overseerr quand l'utilisateur veut :
 - savoir quels films d'un acteur manquent dans la bibliothèque
 - découvrir des films populaires
 - faire une demande de film/série
+
+### Bazarr - Gestionnaire de sous-titres
+Utilise Bazarr quand l'utilisateur parle de :
+- sous-titres manquants, télécharger des sous-titres
+- langues de sous-titres (français, anglais, etc.)
+- providers de sous-titres (OpenSubtitles, etc.)
+- synchroniser les sous-titres avec Radarr/Sonarr
 """
 
 @mcp.prompt()
@@ -79,6 +86,16 @@ try:
     logger.info("Overseerr tools registered successfully")
 except ValueError as e:
     logger.warning(f"Overseerr not configured: {e}")
+
+# Importer et enregistrer les outils Bazarr
+from .bazarr import BazarrClient, register_bazarr_tools
+
+try:
+    bazarr_client = BazarrClient()
+    register_bazarr_tools(mcp, bazarr_client)
+    logger.info("Bazarr tools registered successfully")
+except ValueError as e:
+    logger.warning(f"Bazarr not configured: {e}")
 
 
 def main():

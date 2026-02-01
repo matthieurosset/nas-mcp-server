@@ -1,6 +1,6 @@
 # NAS MCP Server
 
-Serveur MCP pour interagir avec Plex, Radarr et Overseerr.
+Serveur MCP pour interagir avec Plex, Radarr, Overseerr et Bazarr.
 
 ## Installation (Claude Desktop / Claude Code)
 
@@ -14,7 +14,9 @@ Serveur MCP pour interagir avec Plex, Radarr et Overseerr.
     "RADARR_URL": "http://your-nas:7878",
     "RADARR_API_KEY": "your_radarr_api_key",
     "OVERSEERR_URL": "http://your-nas:5055",
-    "OVERSEERR_API_KEY": "your_overseerr_api_key"
+    "OVERSEERR_API_KEY": "your_overseerr_api_key",
+    "BAZARR_URL": "http://your-nas:6767",
+    "BAZARR_API_KEY": "your_bazarr_api_key"
   }
 }
 ```
@@ -24,6 +26,7 @@ Serveur MCP pour interagir avec Plex, Radarr et Overseerr.
 - **Plex API (python-plexapi)** : https://python-plexapi.readthedocs.io/en/latest/modules/library.html
 - **Radarr API** : https://radarr.video/docs/api/
 - **Overseerr API** : https://api-docs.overseerr.dev/
+- **Bazarr API** : Swagger UI disponible dans Bazarr (System > Status)
 
 ## Attributs de notation Plex
 
@@ -44,9 +47,12 @@ src/nas_mcp_server/
 ├── radarr/
 │   ├── client.py    # Client HTTP pour l'API Radarr
 │   └── tools.py     # Outils MCP pour Radarr
-└── overseerr/
-    ├── client.py    # Client HTTP pour l'API Overseerr
-    └── tools.py     # Outils MCP pour Overseerr (filmographie, demandes)
+├── overseerr/
+│   ├── client.py    # Client HTTP pour l'API Overseerr
+│   └── tools.py     # Outils MCP pour Overseerr (filmographie, demandes)
+└── bazarr/
+    ├── client.py    # Client HTTP pour l'API Bazarr
+    └── tools.py     # Outils MCP pour Bazarr (sous-titres)
 ```
 
 ## Variables d'environnement
@@ -59,6 +65,8 @@ src/nas_mcp_server/
 | `RADARR_API_KEY` | Clé API Radarr | Non |
 | `OVERSEERR_URL` | URL du serveur Overseerr | Non |
 | `OVERSEERR_API_KEY` | Clé API Overseerr | Non |
+| `BAZARR_URL` | URL du serveur Bazarr | Non |
+| `BAZARR_API_KEY` | Clé API Bazarr | Non |
 
 ## Release
 
