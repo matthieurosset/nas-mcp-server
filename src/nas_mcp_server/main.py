@@ -63,10 +63,16 @@ def nas_guide() -> str:
     """Guide d'utilisation des services NAS média."""
     return GUIDE
 
+# Initialiser les clients (peuvent être None si non configurés)
+plex_client = None
+radarr_client = None
+overseerr_client = None
+bazarr_client = None
+prowlarr_client = None
+trakt_client = None
+
 # Importer et enregistrer les outils Radarr
 from .radarr import RadarrClient, register_radarr_tools
-
-radarr_client = None
 try:
     radarr_client = RadarrClient()
     register_radarr_tools(mcp, radarr_client)
@@ -114,6 +120,30 @@ try:
     logger.info("Prowlarr tools registered successfully")
 except ValueError as e:
     logger.warning(f"Prowlarr not configured: {e}")
+
+# Importer et enregistrer les outils Trakt
+from .trakt import TraktClient, register_trakt_tools
+
+try:
+    trakt_client = TraktClient()
+    register_trakt_tools(mcp, trakt_client)
+    logger.info("Trakt tools registered successfully")
+except ValueError as e:
+    logger.warning(f"Trakt not configured: {e}")
+
+# Importer et enregistrer les outils unifiés (haut niveau)
+from .unified import register_unified_tools
+
+register_unified_tools(
+    mcp,
+    plex_client=plex_client,
+    radarr_client=radarr_client,
+    overseerr_client=overseerr_client,
+    bazarr_client=bazarr_client,
+    prowlarr_client=prowlarr_client,
+    trakt_client=trakt_client,
+)
+logger.info("Unified tools registered successfully")
 
 
 def main():
