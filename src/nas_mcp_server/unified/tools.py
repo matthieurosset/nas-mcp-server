@@ -192,6 +192,7 @@ def register_unified_tools(
         period: str = "weekly",
         min_imdb_rating: float = 6.0,
         limit: int = 10,
+        exclude_genres: list[str] | None = None,
     ) -> str:
         """
         Découvre les films bien notés que tu n'as pas encore dans ta collection.
@@ -201,6 +202,7 @@ def register_unified_tools(
             period: Période pour 'watched' (weekly, monthly, yearly, all)
             min_imdb_rating: Note IMDB minimum (défaut: 6.0)
             limit: Nombre de films à retourner (défaut: 10)
+            exclude_genres: Liste de genres à exclure (ex: ["animation", "anime"])
         """
         if trakt_client is None:
             return json.dumps({
@@ -258,6 +260,13 @@ def register_unified_tools(
             if trakt_rating and trakt_rating < (min_imdb_rating - 0.5):
                 continue
 
+            # Filtrer par genres exclus
+            movie_genres = [g.lower() for g in movie.get("genres", [])]
+            if exclude_genres:
+                excluded = [g.lower() for g in exclude_genres]
+                if any(g in movie_genres for g in excluded):
+                    continue
+
             candidates.append({
                 "title": movie.get("title"),
                 "year": movie.get("year"),
@@ -306,6 +315,7 @@ def register_unified_tools(
             "source": source,
             "period": period if source == "watched" else None,
             "min_imdb_rating": min_imdb_rating,
+            "exclude_genres": exclude_genres,
             "count": len(result),
             "movies": result,
         }, indent=2, ensure_ascii=False)
