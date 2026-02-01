@@ -1,14 +1,14 @@
 [project]
 name = "nas-mcp-server"
-version = "0.0.1"
-description = "MCP server for Plex, Radarr, Overseerr, and Bazarr"
+version = "0.0.2"
+description = "MCP server for Plex, Radarr, Overseerr, Bazarr, and Prowlarr"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
 authors = [
     { name = "Matthieu Rosset" }
 ]
-keywords = ["mcp", "plex", "radarr", "overseerr", "bazarr", "media", "nas", "subtitles"]
+keywords = ["mcp", "plex", "radarr", "overseerr", "bazarr", "prowlarr", "media", "nas", "subtitles"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: End Users/Desktop",
