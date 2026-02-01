@@ -84,8 +84,8 @@ def register_unified_tools(
             try:
                 status = await bazarr_client.get_system_status()
                 providers = await bazarr_client.get_providers()
-                movies_wanted = await bazarr_client.get_movies_wanted(limit=1000)
-                episodes_wanted = await bazarr_client.get_episodes_wanted(limit=1000)
+                movies_wanted = await bazarr_client.get_movies_wanted(length=1000)
+                episodes_wanted = await bazarr_client.get_episodes_wanted(length=1000)
 
                 providers_ok = sum(1 for p in providers if p.get("status") == "active")
                 providers_throttled = sum(1 for p in providers if p.get("status") == "throttled")
