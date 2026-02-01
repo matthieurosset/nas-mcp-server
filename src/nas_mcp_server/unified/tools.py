@@ -7,6 +7,7 @@ from ..radarr.client import RadarrClient
 from ..overseerr.client import OverseerrClient
 from ..bazarr.client import BazarrClient
 from ..prowlarr.client import ProwlarrClient
+from ..trakt.client import TraktClient
 
 
 def register_unified_tools(
@@ -16,6 +17,7 @@ def register_unified_tools(
     overseerr_client: OverseerrClient | None = None,
     bazarr_client: BazarrClient | None = None,
     prowlarr_client: ProwlarrClient | None = None,
+    trakt_client: TraktClient | None = None,
 ) -> None:
     """Enregistre les outils unifiés de haut niveau."""
 
@@ -183,3 +185,127 @@ def register_unified_tools(
         }
 
         return json.dumps(response, indent=2, ensure_ascii=False)
+
+    @mcp.tool()
+    async def discover_top_rated_missing(
+        source: str = "popular",
+        period: str = "weekly",
+        min_imdb_rating: float = 6.0,
+        limit: int = 10,
+    ) -> str:
+        """
+        Découvre les films bien notés que tu n'as pas encore dans ta collection.
+
+        Args:
+            source: Source Trakt (popular, trending, watched)
+            period: Période pour 'watched' (weekly, monthly, yearly, all)
+            min_imdb_rating: Note IMDB minimum (défaut: 6.0)
+            limit: Nombre de films à retourner (défaut: 10)
+        """
+        if trakt_client is None:
+            return json.dumps({
+                "error": "Trakt not configured",
+                "message": "TRAKT_CLIENT_ID is required"
+            }, indent=2)
+
+        if radarr_client is None:
+            return json.dumps({
+                "error": "Radarr not configured",
+                "message": "Radarr is required to check your collection and get IMDB ratings"
+            }, indent=2)
+
+        # 1. Récupérer les films depuis Trakt (on en prend plus pour filtrer ensuite)
+        fetch_limit = max(100, limit * 10)  # Minimum 100, sinon 10x le limit
+        try:
+            if source == "trending":
+                trakt_movies = await trakt_client.get_trending_movies(limit=fetch_limit)
+            elif source == "watched":
+                trakt_movies = await trakt_client.get_watched_movies(period=period, limit=fetch_limit)
+            else:  # popular par défaut
+                trakt_movies = await trakt_client.get_popular_movies(limit=fetch_limit)
+        except Exception as e:
+            return json.dumps({
+                "error": "Trakt API error",
+                "message": str(e)
+            }, indent=2)
+
+        # 2. Récupérer la collection Radarr
+        try:
+            radarr_movies = await radarr_client.get_movies()
+            # Créer un set des TMDB IDs qu'on a déjà
+            owned_tmdb_ids = {m.get("tmdbId") for m in radarr_movies if m.get("tmdbId")}
+        except Exception as e:
+            return json.dumps({
+                "error": "Radarr API error",
+                "message": str(e)
+            }, indent=2)
+
+        # 3. Extraire les films Trakt, filtrer ceux qu'on a déjà et pré-filtrer par note Trakt
+        candidates = []
+        for item in trakt_movies:
+            # Trakt retourne soit {movie: {...}} soit directement {...}
+            movie = item.get("movie", item)
+            ids = movie.get("ids", {})
+            tmdb_id = ids.get("tmdb")
+            trakt_rating = movie.get("rating")
+
+            # Skip si on l'a déjà
+            if tmdb_id in owned_tmdb_ids:
+                continue
+
+            # Pré-filtrer par note Trakt (approximation de la note IMDB)
+            # On garde une marge de -0.5 car Trakt et IMDB peuvent différer
+            if trakt_rating and trakt_rating < (min_imdb_rating - 0.5):
+                continue
+
+            candidates.append({
+                "title": movie.get("title"),
+                "year": movie.get("year"),
+                "imdb_id": ids.get("imdb"),
+                "tmdb_id": tmdb_id,
+                "trakt_id": ids.get("trakt"),
+                "trakt_rating": trakt_rating,
+                "overview": movie.get("overview", "")[:300],
+                "genres": movie.get("genres", []),
+            })
+
+        # 4. Trier par note Trakt décroissante et limiter avant enrichissement IMDB
+        candidates.sort(key=lambda x: x.get("trakt_rating") or 0, reverse=True)
+        # On enrichit seulement limit * 2 films (marge pour le filtrage IMDB final)
+        candidates_to_enrich = candidates[:limit * 2]
+
+        # 5. Enrichir avec les notes IMDB via Radarr (en parallèle)
+        async def fetch_imdb_rating(movie: dict) -> dict:
+            tmdb_id = movie.get("tmdb_id")
+            if not tmdb_id:
+                movie["imdb_rating"] = None
+                return movie
+            try:
+                results = await radarr_client.search_movie(f"tmdb:{tmdb_id}")
+                if results:
+                    imdb_rating = results[0].get("ratings", {}).get("imdb", {}).get("value")
+                    movie["imdb_rating"] = imdb_rating
+                else:
+                    movie["imdb_rating"] = None
+            except Exception:
+                movie["imdb_rating"] = None
+            return movie
+
+        enriched = await asyncio.gather(*[fetch_imdb_rating(m) for m in candidates_to_enrich])
+
+        # 6. Filtrer par note IMDB minimum
+        filtered = [m for m in enriched if m.get("imdb_rating") and m["imdb_rating"] >= min_imdb_rating]
+
+        # 7. Trier par note IMDB décroissante
+        filtered.sort(key=lambda x: x.get("imdb_rating", 0), reverse=True)
+
+        # 8. Retourner les top `limit`
+        result = filtered[:limit]
+
+        return json.dumps({
+            "source": source,
+            "period": period if source == "watched" else None,
+            "min_imdb_rating": min_imdb_rating,
+            "count": len(result),
+            "movies": result,
+        }, indent=2, ensure_ascii=False)
