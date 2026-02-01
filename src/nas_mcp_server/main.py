@@ -1,4 +1,3 @@
-import os
 import sys
 import logging
 from dotenv import load_dotenv
@@ -50,7 +49,7 @@ def nas_guide() -> str:
     return GUIDE
 
 # Importer et enregistrer les outils Radarr
-from radarr import RadarrClient, register_radarr_tools
+from .radarr import RadarrClient, register_radarr_tools
 
 radarr_client = None
 try:
@@ -61,7 +60,7 @@ except ValueError as e:
     logger.warning(f"Radarr not configured: {e}")
 
 # Importer et enregistrer les outils Plex
-from plex import PlexClient, register_plex_tools
+from .plex import PlexClient, register_plex_tools
 
 try:
     plex_client = PlexClient()
@@ -71,7 +70,7 @@ except ValueError as e:
     logger.warning(f"Plex not configured: {e}")
 
 # Importer et enregistrer les outils Overseerr
-from overseerr import OverseerrClient, register_overseerr_tools
+from .overseerr import OverseerrClient, register_overseerr_tools
 
 try:
     overseerr_client = OverseerrClient()
@@ -84,11 +83,8 @@ except ValueError as e:
 
 def main():
     """Point d'entrée principal."""
-    port = int(os.getenv("MCP_PORT", "3001"))
-    host = os.getenv("MCP_HOST", "0.0.0.0")
-
-    logger.info(f"Starting NAS MCP Server on {host}:{port}")
-    mcp.run(transport="sse", host=host, port=port)
+    logger.info("Starting NAS MCP Server")
+    mcp.run(transport="stdio")
 
 
 if __name__ == "__main__":

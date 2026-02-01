@@ -2,6 +2,23 @@
 
 Serveur MCP pour interagir avec Plex, Radarr et Overseerr.
 
+## Installation (Claude Desktop / Claude Code)
+
+```json
+{
+  "command": "uvx",
+  "args": ["git+https://github.com/matthieurosset/nas-mcp-server"],
+  "env": {
+    "PLEX_URL": "http://your-nas:32400",
+    "PLEX_TOKEN": "your_plex_token",
+    "RADARR_URL": "http://your-nas:7878",
+    "RADARR_API_KEY": "your_radarr_api_key",
+    "OVERSEERR_URL": "http://your-nas:5055",
+    "OVERSEERR_API_KEY": "your_overseerr_api_key"
+  }
+}
+```
+
 ## Documentation API
 
 - **Plex API (python-plexapi)** : https://python-plexapi.readthedocs.io/en/latest/modules/library.html
@@ -15,15 +32,11 @@ Serveur MCP pour interagir avec Plex, Radarr et Overseerr.
 
 Le code utilise `audienceRating` pour afficher les notes IMDB.
 
-## Déploiement des changements
-
-1. Commit et push les changements
-2. Demander à l'utilisateur de redeploy l'image sur Portainer
-
 ## Structure du projet
 
 ```
-src/
+src/nas_mcp_server/
+├── __init__.py      # Export de main()
 ├── main.py          # Point d'entrée du serveur MCP
 ├── plex/
 │   ├── client.py    # Client HTTP pour l'API Plex
@@ -38,11 +51,11 @@ src/
 
 ## Variables d'environnement
 
-```
-PLEX_URL=http://localhost:32400
-PLEX_TOKEN=your_plex_token
-RADARR_URL=http://localhost:7878
-RADARR_API_KEY=your_radarr_api_key
-OVERSEERR_URL=http://localhost:5055
-OVERSEERR_API_KEY=your_overseerr_api_key
-```
+| Variable | Description | Requis |
+|----------|-------------|--------|
+| `PLEX_URL` | URL du serveur Plex | Oui |
+| `PLEX_TOKEN` | Token d'authentification Plex | Oui |
+| `RADARR_URL` | URL du serveur Radarr | Non |
+| `RADARR_API_KEY` | Clé API Radarr | Non |
+| `OVERSEERR_URL` | URL du serveur Overseerr | Non |
+| `OVERSEERR_API_KEY` | Clé API Overseerr | Non |
