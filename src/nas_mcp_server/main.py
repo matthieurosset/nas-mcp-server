@@ -48,6 +48,14 @@ Utilise Bazarr quand l'utilisateur parle de :
 - langues de sous-titres (français, anglais, etc.)
 - providers de sous-titres (OpenSubtitles, etc.)
 - synchroniser les sous-titres avec Radarr/Sonarr
+
+### Prowlarr - Gestionnaire d'indexeurs
+Utilise Prowlarr quand l'utilisateur parle de :
+- indexeurs, trackers, sources de téléchargement
+- rechercher sur les indexeurs
+- tester les indexeurs
+- statistiques des indexeurs
+- applications connectées (Radarr, Sonarr, etc.)
 """
 
 @mcp.prompt()
@@ -96,6 +104,16 @@ try:
     logger.info("Bazarr tools registered successfully")
 except ValueError as e:
     logger.warning(f"Bazarr not configured: {e}")
+
+# Importer et enregistrer les outils Prowlarr
+from .prowlarr import ProwlarrClient, register_prowlarr_tools
+
+try:
+    prowlarr_client = ProwlarrClient()
+    register_prowlarr_tools(mcp, prowlarr_client)
+    logger.info("Prowlarr tools registered successfully")
+except ValueError as e:
+    logger.warning(f"Prowlarr not configured: {e}")
 
 
 def main():

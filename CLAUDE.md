@@ -70,14 +70,21 @@ src/nas_mcp_server/
 
 ## Release
 
+Convention de versioning : `0.0.X` - incrémenter uniquement le dernier chiffre jusqu'à une version stable définitive.
+
 Procédure pour publier une nouvelle version :
 
-1. Incrémenter `version` dans `pyproject.toml`
-2. Commit et push sur GitHub
-3. Build et publier sur PyPI :
-
-```bash
-uv build && uv publish --username __token__ --password <PYPI_TOKEN>
-```
+1. **Vérifier que le repo est propre** : `git status` doit afficher "nothing to commit, working tree clean"
+   - S'il y a des fichiers non suivis (untracked) ou modifiés, les commiter d'abord
+   - **NE JAMAIS publier si `git status` montre des changements non commités**
+2. Incrémenter `version` dans `pyproject.toml`
+3. Commit et push sur GitHub :
+   ```bash
+   git add -A && git commit -m "Bump version to X.Y.Z" && git push
+   ```
+4. Build et publier sur PyPI :
+   ```bash
+   uv build && uv publish --username __token__ --password <PYPI_TOKEN>
+   ```
 
 Le token PyPI est stocké dans `~/.pypirc`. Pour l'utiliser avec `uv publish`, extraire le password du fichier.
