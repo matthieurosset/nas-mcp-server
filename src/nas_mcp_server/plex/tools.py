@@ -236,38 +236,45 @@ def register_plex_tools(mcp: FastMCP, client: PlexClient) -> None:
         return json.dumps(status, indent=2, ensure_ascii=False)
 
     @mcp.tool()
-    async def plex_filter_library(
+    async def plex_search_movies(
         library_key: str | None = None,
         actor: str | None = None,
         director: str | None = None,
         genre: str | None = None,
         year: int | None = None,
+        year_min: int | None = None,
+        year_max: int | None = None,
+        min_rating: float | None = None,
+        watch_status: str | None = None,
+        added_within_days: int | None = None,
+        sort_by: str = "audienceRating:desc",
+        limit: int = 50,
     ) -> str:
         """
-        Filtre les films de la bibliothèque Plex par critères précis.
+        Recherche avancée de films dans la bibliothèque Plex avec filtres combinés.
 
-        Contrairement à plex_search (recherche textuelle), cet outil filtre
-        par correspondance exacte des métadonnées. Tous les critères fournis
-        sont combinés avec une logique AND.
+        Tous les critères sont combinés avec une logique AND.
 
         Args:
-            library_key: Clé de bibliothèque (optionnel, sinon cherche dans toutes les bibliothèques de films)
+            library_key: Clé de bibliothèque (optionnel, sinon toutes les bibliothèques de films)
             actor: Nom de l'acteur (ex: "Brad Pitt")
             director: Nom du réalisateur (ex: "Steven Spielberg")
-            genre: Genre du film (ex: "Action", "Drama", "Comedy")
-            year: Année de sortie (ex: 2020)
+            genre: Genre du film (ex: "Action", "Comedy", "Drama")
+            year: Année de sortie exacte (ex: 2023)
+            year_min: Année minimum (ex: 2000)
+            year_max: Année maximum (ex: 2023)
+            min_rating: Note IMDB minimum (ex: 7.0)
+            watch_status: "watched", "unwatched", ou None pour tous
+            added_within_days: Films ajoutés dans les X derniers jours (ex: 30)
+            sort_by: Tri des résultats (audienceRating:desc, addedAt:desc, year:desc, title:asc)
+            limit: Nombre maximum de résultats
 
         Exemples:
-            - Films avec Brad Pitt: actor="Brad Pitt"
-            - Comédies de 2023: genre="Comedy", year=2023
-            - Films de Spielberg: director="Steven Spielberg"
+            - Films avec Brad Pitt non vus: actor="Brad Pitt", watch_status="unwatched"
+            - Comédies bien notées des 5 dernières années: genre="Comedy", year_min=2019, min_rating=7.0
+            - Films ajoutés ce mois-ci: added_within_days=30
         """
-        if all(v is None for v in [actor, director, genre, year]):
-            return json.dumps({
-                "error": "Au moins un critère de filtre requis",
-                "hint": "Utilisez actor, director, genre ou year"
-            }, ensure_ascii=False)
-
+        # Déterminer les bibliothèques à scanner
         if library_key:
             library_keys = [library_key]
         else:
@@ -277,17 +284,35 @@ def register_plex_tools(mcp: FastMCP, client: PlexClient) -> None:
                 if lib.get("type") == "movie"
             ]
 
+        # Déterminer le filtre unwatched
+        unwatched_only = watch_status == "unwatched"
+
+        # Récupérer les films depuis toutes les bibliothèques
         all_results = []
         for key in library_keys:
             movies = await client.get_library_content(
                 key,
+                unwatched_only=unwatched_only,
                 actor=actor,
                 director=director,
                 genre=genre,
                 year=year,
+                year_min=year_min,
+                year_max=year_max,
+                min_rating=min_rating,
+                added_within_days=added_within_days,
+                sort_by=sort_by,
             )
             all_results.extend(movies)
 
+        # Filtrage client-side pour watch_status="watched" (API ne supporte pas directement)
+        if watch_status == "watched":
+            all_results = [m for m in all_results if m.get("viewCount", 0) > 0]
+
+        # Appliquer la limite
+        all_results = all_results[:limit]
+
+        # Simplifier les résultats
         simplified = []
         for m in all_results:
             simplified.append({
@@ -295,20 +320,31 @@ def register_plex_tools(mcp: FastMCP, client: PlexClient) -> None:
                 "title": m.get("title"),
                 "year": m.get("year"),
                 "rating": m.get("audienceRating"),
+                "viewCount": m.get("viewCount", 0),
+                "addedAt": m.get("addedAt"),
                 "summary": (m.get("summary") or "")[:150] + "..." if len(m.get("summary") or "") > 150 else m.get("summary", ""),
                 "genre": [g.get("tag") for g in m.get("Genre", [])] if m.get("Genre") else None,
                 "director": [d.get("tag") for d in m.get("Director", [])] if m.get("Director") else None,
             })
 
+        # Construire les filtres appliqués pour la réponse
+        filters_applied = {
+            k: v for k, v in {
+                "actor": actor,
+                "director": director,
+                "genre": genre,
+                "year": year,
+                "year_min": year_min,
+                "year_max": year_max,
+                "min_rating": min_rating,
+                "watch_status": watch_status,
+                "added_within_days": added_within_days,
+            }.items() if v is not None
+        }
+
         return json.dumps({
             "count": len(simplified),
-            "filters_applied": {
-                k: v for k, v in {
-                    "actor": actor,
-                    "director": director,
-                    "genre": genre,
-                    "year": year
-                }.items() if v is not None
-            },
+            "filters_applied": filters_applied,
+            "sort_by": sort_by,
             "items": simplified
         }, indent=2, ensure_ascii=False)

@@ -53,6 +53,11 @@ class PlexClient:
         director: str | None = None,
         genre: str | None = None,
         year: int | None = None,
+        year_min: int | None = None,
+        year_max: int | None = None,
+        min_rating: float | None = None,
+        added_within_days: int | None = None,
+        sort_by: str | None = None,
     ) -> list[dict[str, Any]]:
         """
         Récupère le contenu d'une bibliothèque avec filtres optionnels.
@@ -63,7 +68,12 @@ class PlexClient:
             actor: Filtrer par nom d'acteur
             director: Filtrer par nom de réalisateur
             genre: Filtrer par genre
-            year: Filtrer par année de sortie
+            year: Filtrer par année de sortie exacte
+            year_min: Année minimum (inclusive)
+            year_max: Année maximum (inclusive)
+            min_rating: Note audienceRating minimum
+            added_within_days: Ajoutés dans les X derniers jours
+            sort_by: Tri des résultats (ex: "audienceRating:desc", "addedAt:desc")
         """
         endpoint = f"/library/sections/{library_key}/all"
         params = {"includeGuids": "1"}
@@ -78,6 +88,16 @@ class PlexClient:
             params["genre"] = genre
         if year:
             params["year"] = str(year)
+        if year_min:
+            params["year>="] = str(year_min)
+        if year_max:
+            params["year<="] = str(year_max)
+        if min_rating:
+            params["audienceRating>="] = str(min_rating)
+        if added_within_days:
+            params["addedAt>="] = f"-{added_within_days}d"
+        if sort_by:
+            params["sort"] = sort_by
 
         data = await self._request(endpoint, params if params else None)
         metadata = data.get("MediaContainer", {}).get("Metadata", [])
