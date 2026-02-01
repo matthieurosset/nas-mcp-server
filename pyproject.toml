@@ -1,6 +1,6 @@
 [project]
 name = "nas-mcp-server"
-version = "0.0.5"
+version = "0.0.6"
 description = "MCP server for Plex, Radarr, Overseerr, Bazarr, and Prowlarr"
 readme = "README.md"
 requires-python = ">=3.10"
